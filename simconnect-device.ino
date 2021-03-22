@@ -7,10 +7,10 @@
 
 #define WARNING_PIN 13
 
-#define SIM_DEVICES_NR 2
+#define SIM_DEVICES_NR 6
 SimDevice** devices = new SimDevice*[SIM_DEVICES_NR];
 
-#define SIM_EVENTS_NR 2
+#define SIM_EVENTS_NR 3
 SimEvent** events = new SimEvent*[SIM_EVENTS_NR];
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
@@ -40,10 +40,10 @@ void sendDeviceEvent(uint8_t ID, uint8_t type, long value) {
   Serial.write(ID);
   Serial.write(type);
   Serial.write(sizeof(value));
-  //Serial.write(value >> 8*3 & 0xff);
-  //Serial.write(value >> 8*2 & 0xff);
-  //Serial.write(value >> 8   & 0xff);
-  Serial.write(value);
+  Serial.write((value >> 8*3) & 0xff);
+  Serial.write((value >> 8*2) & 0xff);
+  Serial.write((value >> 8)   & 0xff);
+  Serial.write(value & 0xff);
   Serial.write('\n');
 }
 
@@ -70,14 +70,26 @@ void printComOneStandby(String freq) {
   lcd.print(freq);
 }
 
+void printComOneActive(String freq) {
+  lcd.setCursor(0, 2);
+  lcd.print("COM1:        ");
+  lcd.setCursor(6, 2);
+  lcd.print(freq);
+}
+
 void setup() {
   Serial.begin(115200);
 
   devices[0] = new SimDeviceButton(0, 51);
   devices[1] = new SimDeviceRotary(1, 44, 50);
+  devices[2] = new SimDeviceButton(2, 25);
+  devices[3] = new SimDeviceRotary(3, 23, 24);
+  devices[4] = new SimDeviceButton(4, 31);
+  devices[5] = new SimDeviceRotary(5, 29, 30);
 
   events[0] = new SimEvent(2, String("ALTITUDE"));
   events[1] = new SimEvent(3, String("COM1_STANDBY"));
+  events[2] = new SimEvent(4, String("COM1_ACTIVE"));
 
   lcd.init();
   lcd.backlight();
@@ -85,6 +97,7 @@ void setup() {
   lcd.clear();
   printAlt("0");
   printComOneStandby("100.000");
+  printComOneActive("100.000");
 
   pinMode(WARNING_PIN, OUTPUT);
   digitalWrite(WARNING_PIN, LOW);
@@ -135,15 +148,28 @@ void loop() {
             for (int i = 0; i < dataLen; i++) {
               newValue = String(newValue + (char) buff[3 + i]);
             }
-            events[0]->SetValue(newValue);
-            printAlt(newValue);
+            if (events[0]->GetValue() != newValue) {
+              events[0]->SetValue(newValue);
+              printAlt(newValue);
+            }
             break;
-          case 3: // COM1
+          case 3: // COM1 Standby
             for (int i = 0; i < dataLen; i++) {
               newValue = String(newValue + (char) buff[3 + i]);
             }
-            events[1]->SetValue(newValue);
-            printComOneStandby(newValue);
+            if (events[1]->GetValue() != newValue) {
+              events[1]->SetValue(newValue);
+              printComOneStandby(newValue);
+            }
+            break;
+          case 4: // COM1 Active
+            for (int i = 0; i < dataLen; i++) {
+              newValue = String(newValue + (char) buff[3 + i]);
+            }
+            if (events[2]->GetValue() != newValue) {
+              events[2]->SetValue(newValue);
+              printComOneActive(newValue);
+            }
             break;
         }
       } else {
