@@ -110,13 +110,13 @@ void setup() {
   announceMyDevices();
   // Announce what I want to subscribe to
   announceMySubscriptions();
- 
+
 }
 
 void loop() {
   // Update polling devices
   updatePollingDevices();
-  
+
   // Check my devices
   for (int i = 0; i < SIM_DEVICES_NR; i++) {
     if (devices[i]->HasChanged()) {
@@ -127,7 +127,7 @@ void loop() {
       devices[i]->ResetSeen();
     }
   }
-  
+
   // Check if any events have occured
   if (Serial.available() > 0) {
 
@@ -139,7 +139,7 @@ void loop() {
       uint8_t id = buff[0];
       uint8_t type = buff[1];
       uint8_t dataLen = buff[2];
-      
+
       if (b_read == 3 + dataLen) {
         // Correct size
         String newValue = "";
@@ -183,7 +183,7 @@ void loop() {
   // Update output devices
 
   // Print ALT
-  
+
 
   // Print COM1 Standby
 
